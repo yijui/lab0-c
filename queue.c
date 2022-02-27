@@ -165,13 +165,23 @@ int q_size(struct list_head *head)
  * Delete the middle node in list.
  * The middle node of a linked list of size n is the
  * ⌊n / 2⌋th node from the start using 0-based indexing.
+ * ⌊x⌋ denotes the largest integer less than or equal to x.
  * If there're six element, the third member should be return.
  * Return true if successful.
  * Return false if list is NULL or empty.
+ * [leetcode] delete-the-middle-node-of-a-linked-list
  */
 bool q_delete_mid(struct list_head *head)
 {
-    // https://leetcode.com/problems/delete-the-middle-node-of-a-linked-list/
+    if (head == NULL || list_empty(head))
+        return false;
+    struct list_head **indir = &(head->next);
+    for (struct list_head *fast = head->next; fast && fast->next;
+         fast = fast->next->next)
+        indir = &(*indir)->next;
+    struct list_head *del = *indir;
+    list_del_init(del);
+    q_release_element(container_of(del, element_t, list));
     return true;
 }
 
