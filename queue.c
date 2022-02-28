@@ -197,15 +197,48 @@ bool q_delete_mid(struct list_head *head)
  */
 bool q_delete_dup(struct list_head *head)
 {
+    if (!head || list_empty(head))
+        return false;
+
+    struct list_head **p = &(head->next);
+    struct list_head *curr = head->next, *prev = NULL;
+
+    while (curr != head && curr->next != head) {
+        if (strcmp(container_of(curr, element_t, list)->value,
+                   container_of(curr->next, element_t, list)->value) == 0) {
+            do {
+                prev = curr;
+                curr = curr->next;
+                list_del(prev);
+                q_release_element(container_of(prev, element_t, list));
+            } while (curr->next != head &&
+                     strcmp(container_of(curr, element_t, list)->value,
+                            container_of(curr->next, element_t, list)->value) ==
+                         0);
+        }
+        p = &((*p)->next);
+        curr = curr->next;
+    }
     return true;
 }
 
 /*
  * Attempt to swap every two adjacent nodes.
+ * [leetcode 24] problems/swap-nodes-in-pairs
  */
 void q_swap(struct list_head *head)
 {
-    // https://leetcode.com/problems/swap-nodes-in-pairs/
+    if (!head || list_empty(head))
+        return;
+
+    struct list_head *curr = head->next;
+    struct list_head *next = NULL;
+    while (curr && curr->next && curr != head && curr->next != head) {
+        next = curr->next;
+        list_del(next);
+        list_add_tail(next, curr);
+        curr = curr->next;
+    }
 }
 
 /*
