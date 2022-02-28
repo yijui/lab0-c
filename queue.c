@@ -169,7 +169,7 @@ int q_size(struct list_head *head)
  * If there're six element, the third member should be return.
  * Return true if successful.
  * Return false if list is NULL or empty.
- * [leetcode] delete-the-middle-node-of-a-linked-list
+ * [leetcode 2095] delete-the-middle-node-of-a-linked-list
  */
 bool q_delete_mid(struct list_head *head)
 {
@@ -193,10 +193,10 @@ bool q_delete_mid(struct list_head *head)
  *
  * Note: this function always be called after sorting, in other words,
  * list is guaranteed to be sorted in ascending order.
+ * [leetcode 82] remove-duplicates-from-sorted-list-ii/
  */
 bool q_delete_dup(struct list_head *head)
 {
-    // https://leetcode.com/problems/remove-duplicates-from-sorted-list-ii/
     return true;
 }
 
@@ -215,11 +215,22 @@ void q_swap(struct list_head *head)
  * (e.g., by calling q_insert_head, q_insert_tail, or q_remove_head).
  * It should rearrange the existing ones.
  */
-void q_reverse(struct list_head *head) {}
+void q_reverse(struct list_head *head)
+{
+    if (head == NULL || list_empty(head))
+        return;
+    struct list_head *tmp;
+    for (struct list_head *ptr = head->next; ptr == head; ptr = tmp) {
+        tmp = ptr->next;
+        ptr->next = ptr->prev;
+        ptr->prev = ptr->next;
+    }
+}
 
 /*
  * Sort elements of queue in ascending order
  * No effect if q is NULL or empty. In addition, if q has only one
  * element, do nothing.
+ * Merge sort
  */
 void q_sort(struct list_head *head) {}
