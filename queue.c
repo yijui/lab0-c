@@ -255,29 +255,51 @@ bool q_delete_dup(struct list_head *head)
 
 /*
  * Attempt to swap every two adjacent nodes.
+ * [Leetcode 24] Swap Nodes in Pairs
  */
 void q_swap(struct list_head *head)
 {
-    if (!head || list_empty(head))
-        return;  // NULL, empty or single node no need to swap
+    if (head == NULL || list_empty(head) || head->next->next == NULL)
+        return;
 
-    struct list_head *left = head->next, *right = left->next;
+    struct list_head *left = NULL;
+    struct list_head *right = NULL;
 
-    do {
-        // swap
+    for (struct list_head *ptr = head->next; ptr != head && ptr->next != head;
+         ptr = ptr->next) {
+        left = ptr;
+        right = ptr->next;
+
         left->prev->next = right;
         right->next->prev = left;
         left->next = right->next;
         right->prev = left->prev;
         left->prev = right;
         right->next = left;
-
-        // move to next
-        left = left->next;
-        right = left->next;
-
-    } while (left != head && right != head);
+    }
 }
+// void q_swap(struct list_head *head)
+// {
+//     if (!head || list_empty(head))
+//         return;  // NULL, empty or single node no need to swap
+
+//     struct list_head *left = head->next, *right = left->next;
+
+//     do {
+//         // swap
+//         left->prev->next = right;
+//         right->next->prev = left;
+//         left->next = right->next;
+//         right->prev = left->prev;
+//         left->prev = right;
+//         right->next = left;
+
+//         // move to next
+//         left = left->next;
+//         right = left->next;
+
+//     } while (left != head && right != head);
+// }
 /*
  * Reverse elements in queue
  * No effect if q is NULL or empty
