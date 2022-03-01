@@ -15,29 +15,53 @@
  * Create empty queue.
  * Return NULL if could not allocate space.
  */
+// struct list_head *q_new()
+// {
+//     struct list_head *head = malloc(sizeof(struct list_head));
+//     /* if malloc return NULL */
+//     if (head == NULL)
+//         return NULL;
+//     INIT_LIST_HEAD(head);
+//     return head;
+// }
 struct list_head *q_new()
 {
     struct list_head *head = malloc(sizeof(struct list_head));
-    /* if malloc return NULL */
-    if (head == NULL)
-        return NULL;
-    INIT_LIST_HEAD(head);
+
+    // check malloc not return null (implies error or size is 0)
+    if (head)
+        INIT_LIST_HEAD(head);
+
     return head;
 }
 
-
 /* Free all storage used by queue */
+// void q_free(struct list_head *l)
+// {
+//     if (l == NULL)
+//         return;
+//     element_t *entry, *safe;
+//     list_for_each_entry_safe (entry, safe, l, list) {
+//         q_release_element(entry);
+//     }
+//     free(l);
+// }
 void q_free(struct list_head *l)
 {
-    if (l == NULL)
-        return;
-    element_t *entry, *safe;
-    list_for_each_entry_safe (entry, safe, l, list) {
-        q_release_element(entry);
+    if (!l)
+        return;  // should not free NULL list
+
+
+    // traverse and delete all entries and its value in the list
+    element_t *entry = NULL, *next = NULL;
+    list_for_each_entry_safe (entry, next, l, list) {
+        free(entry->value);
+        free(entry);
     }
+
+    // free list
     free(l);
 }
-
 /*
  * Attempt to insert element at head of queue.
  * Return true if successful.
@@ -176,14 +200,17 @@ bool q_delete_mid(struct list_head *head)
     if (head == NULL || list_empty(head))
         return false;
     struct list_head **indir = &(head->next);
-    for (struct list_head *fast = head->next; fast && fast->next;
-         fast = fast->next->next)
+    for (struct list_head *fast = head->next;
+         fast != head && fast->next != head; fast = fast->next->next)
         indir = &(*indir)->next;
     struct list_head *del = *indir;
     list_del_init(del);
-    q_release_element(container_of(del, element_t, list));
+    element_t *mid = list_entry(del, element_t, list);
+    q_release_element(mid);
     return true;
 }
+
+
 
 /*
  * Delete all nodes that have duplicate string,
@@ -197,50 +224,60 @@ bool q_delete_mid(struct list_head *head)
  */
 bool q_delete_dup(struct list_head *head)
 {
-    if (!head || list_empty(head))
+    if (!head)
         return false;
 
-    struct list_head **p = &(head->next);
-    struct list_head *curr = head->next, *prev = NULL;
 
-    while (curr != head && curr->next != head) {
-        if (strcmp(container_of(curr, element_t, list)->value,
-                   container_of(curr->next, element_t, list)->value) == 0) {
-            do {
-                prev = curr;
-                curr = curr->next;
-                list_del(prev);
-                q_release_element(container_of(prev, element_t, list));
-            } while (curr->next != head &&
-                     strcmp(container_of(curr, element_t, list)->value,
-                            container_of(curr->next, element_t, list)->value) ==
-                         0);
-        }
-        p = &((*p)->next);
-        curr = curr->next;
+    LIST_HEAD(duplist);
+
+    bool prev = false;
+    element_t *ptr = list_entry(head->next, element_t, list), *next = ptr;
+
+    for (bool same; next->list.next != head; ptr = next) {
+        next = list_entry(ptr->list.next, element_t, list);
+        same = !strcmp(ptr->value, next->value);
+        if (same || prev)
+            list_move(&ptr->list, &duplist);
+        prev = same;
     }
+    // don't forget last node
+    if (prev)
+        list_move(&ptr->list, &duplist);
+
+    // delete each element in dup list
+    list_for_each_entry_safe (ptr, next, &duplist, list) {
+        free(ptr->value);
+        free(ptr);
+    }
+
     return true;
 }
 
 /*
  * Attempt to swap every two adjacent nodes.
- * [leetcode 24] problems/swap-nodes-in-pairs
  */
 void q_swap(struct list_head *head)
 {
     if (!head || list_empty(head))
-        return;
+        return;  // NULL, empty or single node no need to swap
 
-    struct list_head *curr = head->next;
-    struct list_head *next = NULL;
-    while (curr && curr->next && curr != head && curr->next != head) {
-        next = curr->next;
-        list_del(next);
-        list_add_tail(next, curr);
-        curr = curr->next;
-    }
+    struct list_head *left = head->next, *right = left->next;
+
+    do {
+        // swap
+        left->prev->next = right;
+        right->next->prev = left;
+        left->next = right->next;
+        right->prev = left->prev;
+        left->prev = right;
+        right->next = left;
+
+        // move to next
+        left = left->next;
+        right = left->next;
+
+    } while (left != head && right != head);
 }
-
 /*
  * Reverse elements in queue
  * No effect if q is NULL or empty
@@ -252,18 +289,10 @@ void q_reverse(struct list_head *head)
 {
     if (head == NULL || list_empty(head))
         return;
-    struct list_head *tmp;
-    for (struct list_head *ptr = head->next; ptr == head; ptr = tmp) {
+    struct list_head *tmp = NULL;
+    for (struct list_head *ptr = head; tmp != head; ptr = tmp) {
         tmp = ptr->next;
         ptr->next = ptr->prev;
-        ptr->prev = ptr->next;
+        ptr->prev = tmp;
     }
 }
-
-/*
- * Sort elements of queue in ascending order
- * No effect if q is NULL or empty. In addition, if q has only one
- * element, do nothing.
- * Merge sort
- */
-void q_sort(struct list_head *head) {}
