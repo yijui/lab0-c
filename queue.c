@@ -297,10 +297,90 @@ void q_reverse(struct list_head *head)
     }
 }
 
+
+struct list_head *my_merge(struct list_head *a, struct list_head *b)
+{
+    struct list_head *head = NULL, **tail = &head;
+    for (;;) {
+        /* if equal, take 'a' -- important for sort stability */
+        if (strcmp(list_entry(a, element_t, list)->value,
+                   list_entry(b, element_t, list)->value) <= 0) {
+            *tail = a;
+            tail = &a->next;
+            a = a->next;
+            if (!a) {
+                *tail = b;
+                break;
+            }
+        } else {
+            *tail = b;
+            tail = &b->next;
+            b = b->next;
+            if (!b) {
+                *tail = a;
+                break;
+            }
+        }
+    }
+    return head;
+}
+
+struct list_head *my_mergeSortList(struct list_head *head)
+{
+    if (!head || !head->next)
+        return head;
+    struct list_head *sorted_tail = head;
+    // scan list for not sorted node
+    while (sorted_tail->next) {
+        if (strcmp(list_entry(sorted_tail, element_t, list)->value,
+                   list_entry(sorted_tail->next, element_t, list)->value) > 0) {
+            break;
+        }
+        sorted_tail = sorted_tail->next;
+    }
+    if (!sorted_tail->next) {
+        // all the list is sorted, just return
+        return head;
+    }
+    if (sorted_tail != head) {
+        struct list_head *not_sorted = sorted_tail->next;
+        sorted_tail->next = NULL;
+        return my_merge(head, my_mergeSortList(not_sorted));
+    }
+    // the first two node is not sorted,
+    // use cycle detection to split list at middle
+    struct list_head *slow = head;
+    struct list_head *fast = head->next;
+    while (fast && fast->next) {
+        slow = slow->next;
+        fast = fast->next->next;
+    }
+    fast = slow->next;
+    slow->next = NULL;
+    return my_merge(my_mergeSortList(head), my_mergeSortList(fast));
+}
+
 /*
  * Sort elements of queue in ascending order
  * No effect if q is NULL or empty. In addition, if q has only one
  * element, do nothing.
- * Merge sort
  */
-void q_sort(struct list_head *head) {}
+void q_sort(struct list_head *head)
+{
+    if (q_size(head) <= 1) {
+        return;
+    }
+    struct list_head *list = head->next;
+    head->prev->next = NULL;
+    list = my_mergeSortList(list);
+    head->next = list;
+
+    // rebuild prev link
+    struct list_head *i = head;
+    while (i->next != NULL) {
+        i->next->prev = i;
+        i = i->next;
+    }
+    head->prev = i;
+    i->next = head;
+}
