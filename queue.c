@@ -296,3 +296,11 @@ void q_reverse(struct list_head *head)
         ptr->prev = tmp;
     }
 }
+
+/*
+ * Sort elements of queue in ascending order
+ * No effect if q is NULL or empty. In addition, if q has only one
+ * element, do nothing.
+ * Merge sort
+ */
+void q_sort(struct list_head *head) {}
